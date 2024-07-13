@@ -20,6 +20,7 @@ class Stream(QObject):
 class DownloadThread(QThread):
     finished = pyqtSignal(bool, str)
     metadata_ready = pyqtSignal(str, str, QPixmap)
+    progress = pyqtSignal(int) # Show download progress
 
     def __init__(self, url, track_number, ffmpeg_path):
         QThread.__init__(self)
@@ -35,16 +36,23 @@ class DownloadThread(QThread):
             artist = "Sample Artist"
             # temp image
             pixmap = QPixmap(100, 100)
-            pixmap.fill(Qt.GlobalColor.red)  # 임시로 빨간색 사각형 생성
+            pixmap.fill(Qt.GlobalColor.red)  # Temp image. Red
             
             # signal generating about metadata
             self.metadata_ready.emit(title, artist, pixmap)
             
-            # Download process
-            result = download_audio(self.url, self.track_number, self.ffmpeg_path)
+#            # Download process
+#            for i in range(101):
+#                self.progress.emit(i)
+#                self.msleep(50)
+
+            result = download_audio(self.url, self.track_number, self.ffmpeg_path, self.update_progress)
             self.finished.emit(True, result)
         except Exception as e:
             self.finished.emit(False, str(e))
+
+    def update_progress(self, value):
+        self.progress.emit(value)
 
 class YouTubeDownloaderGUI(QWidget):
     def __init__(self):
@@ -131,11 +139,18 @@ class YouTubeDownloaderGUI(QWidget):
             except subprocess.CalledProcessError:
                 QMessageBox.critical(self, "Error", "[Linux] ffmpeg is not installed")
                 return None
+
         self.download_button.setEnabled(False) # disable the download button until complete 
         self.download_thread = DownloadThread(url, track_number, ffmpeg_path)
         self.download_thread.finished.connect(self.onDownloadComplete)
         self.download_thread.metadata_ready.connect(self.update_metadata_display)
+        self.download_thread.progress.connect(self.update_button_progress)  # Connect progress signal to update_button_progress
         self.download_thread.start()
+
+    @pyqtSlot(int)
+    def update_button_progress(self, value):
+        print(f"update_button_progress function ins called {value}")
+        self.download_button.setText(f"Downloading... {value}%")  # Update button text with progress
 
     def update_metadata_display(self, title, artist, album_art):
         self.title_label.setText(f"Title: {title}")
@@ -149,6 +164,7 @@ class YouTubeDownloaderGUI(QWidget):
             QMessageBox.information(self, "Success", message)
         else:
             QMessageBox.critical(self, "Error", message)
+        self.download_button.setText("Download")
 
     # Not Implemented Yet!
     def install_ffmpeg(self):

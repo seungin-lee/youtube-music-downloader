@@ -16,7 +16,7 @@ def clean_url(url):
     return parsed_url._replace(query=new_query, fragment='').geturl()
 
 
-def download_audio(url, select_number=0, ffmpeg_path="none" ):
+def download_audio(url, select_number=0, ffmpeg_path="none", progress_callback=None):
     url = clean_url(url)
     ydl_opts = {
         'quiet': True,
@@ -34,11 +34,16 @@ def download_audio(url, select_number=0, ffmpeg_path="none" ):
             # If url means 'single track'
             video_count = 1
             print("This is a single track")
-
     for i in range(1, video_count + 1):
         if int(select_number) == i or int(select_number) == 0:
+            def progress_hook(d):
+                if d['status'] == 'downloading':
+                    percent = d['_percent_str'].strip('%')
+                    if progress_callback:
+                        progress_callback(int(float(percent)))
             ydl_opts = {
                 'format': 'bestaudio/best',
+                'progress_hooks': [progress_hook],
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',

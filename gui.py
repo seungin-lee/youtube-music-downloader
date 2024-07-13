@@ -71,9 +71,9 @@ class YouTubeDownloaderGUI(QWidget):
         left_layout.addWidget(track_label, 1, 0)
         left_layout.addWidget(self.track_entry, 1, 1)
 
-        download_button = QPushButton('Download')
-        download_button.clicked.connect(self.download)
-        left_layout.addWidget(download_button, 2, 0, 1, 3)
+        self.download_button = QPushButton('Download')
+        self.download_button.clicked.connect(self.download)
+        left_layout.addWidget(self.download_button, 2, 0, 1, 3)
 
         install_ffmpeg_button = QPushButton('Install FFmpeg')
         install_ffmpeg_button.clicked.connect(self.install_ffmpeg)
@@ -131,7 +131,7 @@ class YouTubeDownloaderGUI(QWidget):
             except subprocess.CalledProcessError:
                 QMessageBox.critical(self, "Error", "[Linux] ffmpeg is not installed")
                 return None
-        
+        self.download_button.setEnabled(False) # disable the download button until complete 
         self.download_thread = DownloadThread(url, track_number, ffmpeg_path)
         self.download_thread.finished.connect(self.onDownloadComplete)
         self.download_thread.metadata_ready.connect(self.update_metadata_display)
@@ -144,6 +144,7 @@ class YouTubeDownloaderGUI(QWidget):
         self.album_art_label.setPixmap(album_art.scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio))
 
     def onDownloadComplete(self, success, message):
+        self.download_button.setEnabled(True) # enable the download button
         if success:
             QMessageBox.information(self, "Success", message)
         else:

@@ -5,6 +5,7 @@ import subprocess
 from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout, QTextEdit, QMessageBox, QHBoxLayout, QVBoxLayout
 from PyQt6.QtCore import QObject, pyqtSignal, QThread, pyqtSlot, Qt
 from PyQt6.QtGui import QIcon, QPixmap
+from PIL.ImageQt import ImageQt
 from downloader import download_audio
 import platform
 
@@ -31,22 +32,17 @@ class DownloadThread(QThread):
     @pyqtSlot()
     def run(self):
         try:
-            # Generating Virtual Metadata
-            title = "Sample Song"
-            artist = "Sample Artist"
-            # temp image
-            pixmap = QPixmap(100, 100)
-            pixmap.fill(Qt.GlobalColor.red)  # Temp image. Red
+            # # Generating Virtual Metadata
+            # title = "Sample Song"
+            # artist = "Sample Artist"
+            # # temp image
+            # pixmap = QPixmap(100, 100)
+            # pixmap.fill(Qt.GlobalColor.red)  # Temp image. Red
             
-            # signal generating about metadata
-            self.metadata_ready.emit(title, artist, pixmap)
+            # # signal generating about metadata
+            # self.metadata_ready.emit(title, artist, pixmap)
             
-#            # Download process
-#            for i in range(101):
-#                self.progress.emit(i)
-#                self.msleep(50)
-
-            result = download_audio(self.url, self.track_number, self.ffmpeg_path, self.update_progress)
+            result = download_audio(self.url, self.track_number, self.ffmpeg_path, self.get_metadata, self.update_progress)
             self.finished.emit(True, result)
         except Exception as e:
             self.finished.emit(False, str(e))
@@ -54,13 +50,21 @@ class DownloadThread(QThread):
     def update_progress(self, value):
         self.progress.emit(value)
 
+    def get_metadata(self, title, artist, thumbnail):
+        if thumbnail:
+            pixmap = QPixmap.fromImage(ImageQt(thumbnail))
+        else:
+            pixmap = QPixmap(100, 100)
+            pixmap.fill(Qt.GlobalColor.red)  # Temp image. Red
+        self.metadata_ready.emit(title, artist, pixmap)
+
 class YouTubeDownloaderGUI(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle('YouTube Downloader')
+        self.setWindowTitle('YouTube Music Downloader')
         self.setGeometry(300, 300, 700, 300)
 
         main_layout = QHBoxLayout()
@@ -68,12 +72,12 @@ class YouTubeDownloaderGUI(QWidget):
         right_layout = QVBoxLayout()
 
         # Left layout
-        url_label = QLabel('Enter YouTube URL:')
+        url_label = QLabel('Enter YouTube URL\t')
         self.url_entry = QLineEdit()
         left_layout.addWidget(url_label, 0, 0)
         left_layout.addWidget(self.url_entry, 0, 1, 1, 2)
 
-        track_label = QLabel('Track Number (optional):')
+        track_label = QLabel('Track Number (optional)')
         self.track_entry = QLineEdit()
         self.track_entry.setFixedWidth(50)
         left_layout.addWidget(track_label, 1, 0)
@@ -97,8 +101,8 @@ class YouTubeDownloaderGUI(QWidget):
         self.album_art_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.album_art_label.setStyleSheet("border: 1px solid black;")
 
-        self.title_label = QLabel("Title\t: ")
-        self.artist_label = QLabel("Artist\t: ")
+        self.title_label = QLabel("Title  : ")
+        self.artist_label = QLabel("Artist : ")
 
         right_layout.addWidget(self.album_art_label)
         right_layout.addWidget(self.title_label)
@@ -149,12 +153,11 @@ class YouTubeDownloaderGUI(QWidget):
 
     @pyqtSlot(int)
     def update_button_progress(self, value):
-        print(f"update_button_progress function ins called {value}")
         self.download_button.setText(f"Downloading... {value}%")  # Update button text with progress
 
     def update_metadata_display(self, title, artist, album_art):
-        self.title_label.setText(f"Title: {title}")
-        self.artist_label.setText(f"Artist: {artist}")
+        self.title_label.setText(f"Title  : {title}")
+        self.artist_label.setText(f"Artist : {artist}")
         self.album_art_label.clear()
         self.album_art_label.setPixmap(album_art.scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio))
 

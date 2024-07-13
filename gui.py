@@ -30,17 +30,17 @@ class DownloadThread(QThread):
     @pyqtSlot()
     def run(self):
         try:
-            # 가상의 메타데이터 생성
+            # Generating Virtual Metadata
             title = "Sample Song"
             artist = "Sample Artist"
-            # 임시 이미지 (실제로는 URL에서 이미지를 다운로드해야 함)
+            # temp image
             pixmap = QPixmap(100, 100)
             pixmap.fill(Qt.GlobalColor.red)  # 임시로 빨간색 사각형 생성
             
-            # 메타데이터 시그널 발생
+            # signal generating about metadata
             self.metadata_ready.emit(title, artist, pixmap)
             
-            # 실제 다운로드 진행
+            # Download process
             result = download_audio(self.url, self.track_number, self.ffmpeg_path)
             self.finished.emit(True, result)
         except Exception as e:
@@ -84,10 +84,13 @@ class YouTubeDownloaderGUI(QWidget):
         left_layout.addWidget(self.output_text, 4, 0, 1, 3)
 
         # Right Layout (Metadata of the song)
-        self.album_art_label = QLabel()
+        self.album_art_label = QLabel("Album Art. Download not started")
         self.album_art_label.setFixedSize(200, 200)
-        self.title_label = QLabel("Title: ")
-        self.artist_label = QLabel("Artist: ")
+        self.album_art_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        self.album_art_label.setStyleSheet("border: 1px solid black;")
+
+        self.title_label = QLabel("Title\t: ")
+        self.artist_label = QLabel("Artist\t: ")
 
         right_layout.addWidget(self.album_art_label)
         right_layout.addWidget(self.title_label)
@@ -137,6 +140,7 @@ class YouTubeDownloaderGUI(QWidget):
     def update_metadata_display(self, title, artist, album_art):
         self.title_label.setText(f"Title: {title}")
         self.artist_label.setText(f"Artist: {artist}")
+        self.album_art_label.clear()
         self.album_art_label.setPixmap(album_art.scaled(200, 200, Qt.AspectRatioMode.KeepAspectRatio))
 
     def onDownloadComplete(self, success, message):

@@ -5,7 +5,9 @@ from PIL import Image
 from io import BytesIO
 from urllib.parse import urlparse, parse_qs, urlencode
 import requests
-import tempfile
+import mutagen
+from mutagen.id3 import ID3, APIC
+
 
 
 def clean_url(url):
@@ -32,6 +34,23 @@ def resize_image(album_art):
         album_art = album_art.crop((0, top, width, bottom))
     return album_art
 
+def set_album_art(mp3_path, img_path):
+    audio = mutagen.File(mp3_path)
+    if audio.tags is None:
+        audio.add_tags()
+    
+    with open(img_path, 'rb') as albumart:
+        audio.tags.add( 
+            APIC(
+                encoding=3, #UTF-8
+                mime='image/jpeg',
+                type=3, # 3 means album cover
+                desc='Cover',
+                data=albumart.read()
+            )
+        )
+    audio.save()
+
 
 def download_audio(url, select_number=0, ffmpeg_path="none", metadata_callback=None, progress_callback=None):
     url = clean_url(url)
@@ -55,7 +74,7 @@ def download_audio(url, select_number=0, ffmpeg_path="none", metadata_callback=N
             thumbnail = resize_image(thumbnail)
 
             # Save the thumbnail to a temporary file
-            thumbnail_path = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg").name
+            thumbnail_path = "thumbnail.jpg"
             thumbnail.save(thumbnail_path)
         else:
             thumbnail = None
@@ -110,6 +129,7 @@ def download_audio(url, select_number=0, ffmpeg_path="none", metadata_callback=N
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
+                set_album_art(download_file_path, thumbnail_path)
 
     if thumbnail_path and os.path.exists(thumbnail_path):
         os.remove(thumbnail_path)

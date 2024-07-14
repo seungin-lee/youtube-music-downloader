@@ -32,16 +32,6 @@ class DownloadThread(QThread):
     @pyqtSlot()
     def run(self):
         try:
-            # # Generating Virtual Metadata
-            # title = "Sample Song"
-            # artist = "Sample Artist"
-            # # temp image
-            # pixmap = QPixmap(100, 100)
-            # pixmap.fill(Qt.GlobalColor.red)  # Temp image. Red
-            
-            # # signal generating about metadata
-            # self.metadata_ready.emit(title, artist, pixmap)
-            
             result = download_audio(self.url, self.track_number, self.ffmpeg_path, self.get_metadata, self.update_progress)
             self.finished.emit(True, result)
         except Exception as e:

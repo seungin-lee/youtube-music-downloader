@@ -14,9 +14,15 @@ def clean_url(url):
     # parsing URL
     parsed_url = urlparse(url)
     query_params = parse_qs(parsed_url.query)
-    
+
+    if 'playlist?' in parsed_url.path:
+        return url
+
     # Only keep 'v' parameter in url
-    cleaned_params = {'v': query_params.get('v', [])}
+    cleaned_params = {}
+    if 'v' in query_params:
+        cleaned_params['v'] = query_params['v']
+
     new_query = urlencode(cleaned_params, doseq=True)
     
     # return parsed url
@@ -62,6 +68,7 @@ def download_audio(url, select_number=0, ffmpeg_path="none", metadata_callback=N
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
+
         # Extract metadata
         title = info.get('title', 'Unknown Title')
         artist = info.get('uploader', 'Unknown Artist')

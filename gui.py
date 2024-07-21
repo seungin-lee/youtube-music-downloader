@@ -42,7 +42,9 @@ class DownloadThread(QThread):
 
     def get_metadata(self, title, artist, thumbnail):
         if thumbnail:
-            pixmap = QPixmap.fromImage(ImageQt(thumbnail))
+            qimage = ImageQt(thumbnail).copy()
+            pixmap = QPixmap.fromImage(qimage)
+            #pixmap = QPixmap.fromImage(ImageQt(thumbnail))
         else:
             pixmap = QPixmap(100, 100)
             pixmap.fill(Qt.GlobalColor.red)  # Temp image. Red

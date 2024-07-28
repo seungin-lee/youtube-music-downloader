@@ -81,7 +81,6 @@ def download_audio(url, select_number=0, ffmpeg_path="none", metadata_callback=N
 
         for i in range(0, len(video_ids)):
             if int(select_number) == 0  or (i + 1) == int(select_number):
-                print("START LOOP")
                 # Extract metadata
                 info_dict = ydl.extract_info(video_ids[i], download=False)
                 title = [info_dict['title']][0]

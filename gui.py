@@ -165,7 +165,6 @@ class YouTubeDownloaderGUI(QWidget):
         ffmpeg_path = self.check_ffmpeg()
         if ffmpeg_path is None:
             return None
-        print(f"gui.py ffmpeg path : {ffmpeg_path}")
 
         self.download_button.setEnabled(False)
         self.download_button.setStyleSheet("background-color: lightgray; color: gray;")

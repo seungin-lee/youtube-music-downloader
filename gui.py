@@ -53,8 +53,7 @@ class DownloadThread(QThread):
 
 class InstallFFmpegThread(QThread):
     finished = pyqtSignal(bool, str)  # 설치 완료 시 신호를 보냅니다.
-    download_progress = pyqtSignal(int,int)
-    extraction_progress = pyqtSignal(int, int)
+    progress = pyqtSignal(int)
 
     def __init__(self):
         QThread.__init__(self)
@@ -62,11 +61,10 @@ class InstallFFmpegThread(QThread):
     @pyqtSlot()
     def run(self):
         try:
-            install_ffmpeg_from_github(self.download_progress.emit, self.extraction_progress.emit)
-            #install_ffmpeg_from_github()
-            self.finished.emit(True, "FFmpeg installation completed successfully.")
+            install_ffmpeg_from_github(self.progress.emit)
+            self.finished.emit(True, "ffmpeg installation completed successfully.")
         except Exception as e:
-            self.finished.emit(False, f"FFmpeg installation failed: {str(e)}")
+            self.finished.emit(False, f"ffmpeg installation failed: {str(e)}")
 
 class YouTubeDownloaderGUI(QWidget):
     def __init__(self):
@@ -97,7 +95,7 @@ class YouTubeDownloaderGUI(QWidget):
         self.download_button.clicked.connect(self.download)
         left_layout.addWidget(self.download_button, 2, 0, 1, 3)
 
-        self.install_ffmpeg_button = QPushButton('Install FFmpeg')
+        self.install_ffmpeg_button = QPushButton('Install ffmpeg')
         self.install_ffmpeg_button.clicked.connect(self.install_ffmpeg)
         left_layout.addWidget(self.install_ffmpeg_button, 3, 0, 1, 3)
 
@@ -135,7 +133,7 @@ class YouTubeDownloaderGUI(QWidget):
         self.output_text.ensureCursorVisible()
         QApplication.processEvents()
 
-    def check_ffmpeg(self):
+    def check_ffmpeg(self, quiet=False):
         if platform.system() == 'Windows':
             for path in os.environ["PATH"].split(os.pathsep):
                 ffmpeg_exe = os.path.join(path, 'ffmpeg.exe')
@@ -146,8 +144,8 @@ class YouTubeDownloaderGUI(QWidget):
             if os.path.isfile(current_dir_ffmpeg):
                 print(os.path.dirname(current_dir_ffmpeg))
                 return os.path.dirname(current_dir_ffmpeg)
-
-            QMessageBox.critical(self, "Error", "[Windows] ffmpeg is not installed or not found in the expected locations")
+            if quiet is False:
+                QMessageBox.critical(self, "Error", "[Windows] ffmpeg is not installed or not found in the expected locations")
             return None
         else:
             try:
@@ -170,6 +168,7 @@ class YouTubeDownloaderGUI(QWidget):
         print(f"gui.py ffmpeg path : {ffmpeg_path}")
 
         self.download_button.setEnabled(False)
+        self.download_button.setStyleSheet("background-color: lightgray; color: gray;")
 
         self.download_thread = DownloadThread(url, track_number, ffmpeg_path)
         self.download_thread.finished.connect(self.onDownloadComplete)
@@ -189,6 +188,7 @@ class YouTubeDownloaderGUI(QWidget):
 
     def onDownloadComplete(self, success, message):
         self.download_button.setEnabled(True) # enable the download button
+        self.download_button.setStyleSheet("")
         if success:
             QMessageBox.information(self, "Success", message)
         else:
@@ -197,41 +197,31 @@ class YouTubeDownloaderGUI(QWidget):
 
     # Not Implemented Yet!
     def install_ffmpeg(self):
-        ffmpeg_path = self.check_ffmpeg()
+        ffmpeg_path = self.check_ffmpeg(True)
         if ffmpeg_path is not None:
             QMessageBox.information(self, "Information", f"ffmpeg is already installed at {ffmpeg_path}")
             return None
 
-
         if platform.system() == 'Windows':
-            print("Start installing FFmpeg...")
+            print("Start installing ffmpeg...")
             self.install_ffmpeg_button.setEnabled(False)
+            self.install_ffmpeg_button.setStyleSheet("background-color: lightgray; color: gray;")
             self.install_thread = InstallFFmpegThread()
-            self.install_thread.download_progress.connect(self.update_download_progress)
-            self.install_thread.extraction_progress.connect(self.update_extraction_progress)
+            self.install_thread.progress.connect(self.update_install_progress)
             self.install_thread.finished.connect(self.onInstallComplete)
             self.install_thread.start()
-        else :
+        else:
             QMessageBox.information(self, "Information", f"Please install ffmpeg using \'sudo apt install ffmpeg\'")
 
-
-    @pyqtSlot(int, int)
-    def update_download_progress(self, downloaded, total_size):
-        percentage = int(100 * downloaded / total_size)
-        if percentage != self.last_download_percentage:
-            self.output_text.setPlainText(f"Downloading: {percentage}%")
-            self.last_download_percentage = percentage
-
-    @pyqtSlot(int, int)
-    def update_extraction_progress(self, current, total):
-        percentage = int(100 * current / total)
-        if percentage != self.last_extraction_percentage:
-            self.output_text.setPlainText(f"Extracting: {percentage}%")
-            self.last_extraction_percentage = percentage
+    @pyqtSlot(int)
+    def update_install_progress(self, value):
+        self.install_ffmpeg_button.setText(f"Installing ffmpeg... {value}%")
 
     @pyqtSlot(bool, str) 
     def onInstallComplete(self, success, message):
         self.install_ffmpeg_button.setEnabled(True)
+        self.install_ffmpeg_button.setStyleSheet("")
+        self.install_ffmpeg_button.setText("Install ffmpeg")
         if success:
             QMessageBox.information(self, "Success", message)
         else:

@@ -1,5 +1,5 @@
 # YoutubeMusic Downloader
-This project uses `yt-dlp` package for python.  
+This project uses `yt-dlp` package of python.  
 Please refer the follow [repository](https://github.com/yt-dlp/yt-dlp)  
   
 This porject is available above python version > 3.10.x  

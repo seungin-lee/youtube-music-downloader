@@ -52,7 +52,7 @@ class DownloadThread(QThread):
         self.metadata_ready.emit(title, artist, pixmap)
 
 class InstallFFmpegThread(QThread):
-    finished = pyqtSignal(bool, str)  # 설치 완료 시 신호를 보냅니다.
+    finished = pyqtSignal(bool, str)
     progress = pyqtSignal(int)
 
     def __init__(self):
@@ -73,14 +73,14 @@ class YouTubeDownloaderGUI(QWidget):
 
     def initUI(self):
         self.setWindowTitle('YouTube Music Downloader')
-        self.setGeometry(300, 300, 700, 300)
+        self.setGeometry(300, 300, 900, 600)
 
         main_layout = QHBoxLayout()
         left_layout = QGridLayout()
         right_layout = QVBoxLayout()
 
         # Left layout
-        url_label = QLabel('Enter YouTube URL\t')
+        url_label = QLabel('Enter YouTubeMusic URL\t')
         self.url_entry = QLineEdit()
         left_layout.addWidget(url_label, 0, 0)
         left_layout.addWidget(self.url_entry, 0, 1, 1, 2)
@@ -110,7 +110,9 @@ class YouTubeDownloaderGUI(QWidget):
         self.album_art_label.setStyleSheet("border: 1px solid black;")
 
         self.title_label = QLabel("Title  : ")
+        self.title_label.setWordWrap(True)
         self.artist_label = QLabel("Artist : ")
+        self.artist_label.setWordWrap(True)
 
         right_layout.addWidget(self.album_art_label)
         right_layout.addWidget(self.title_label)
